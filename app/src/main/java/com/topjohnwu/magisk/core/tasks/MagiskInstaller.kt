@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
+import android.util.Log
 
 abstract class MagiskInstallImpl protected constructor(
     protected val console: MutableList<String>,
@@ -107,12 +108,16 @@ abstract class MagiskInstallImpl protected constructor(
             // Extract binaries
             if (isRunningAsStub) {
                 ZipFile(StubApk.current(context)).use { zf ->
+                    zf.entries().asSequence().forEach {
+                        Log.d("Magisk", "Entry: ${it.name}")
+                    }
                     zf.entries().asSequence().filter {
                         !it.isDirectory && it.name.startsWith("/lib/${Const.CPU_ABI}/")
                     }.forEach {
                         val n = it.name.substring(it.name.lastIndexOf('/') + 1)
                         val name = n.substring(3, n.length - 3)
                         val dest = File(installDir, name)
+                        Log.d("Magisk", "Copying file: ${it.name} to ${dest.absolutePath}")
                         zf.getInputStream(it).writeTo(dest)
                         dest.setExecutable(true)
                     }
@@ -573,7 +578,7 @@ abstract class MagiskInstaller(
         if (success) {
             console.add("- All done!")
         } else {
-            Shell.cmd("rm -rf $installDir").submit()
+            //Shell.cmd("rm -rf $installDir").submit()
             console.add("! Installation failed")
         }
         return success
